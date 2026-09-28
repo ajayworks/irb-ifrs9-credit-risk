@@ -122,7 +122,13 @@ def main(argv: list[str]) -> None:
     for y in years:
         for name, df in summarise_vintage(y, cut_off).items():
             parts.setdefault(name, []).append(df)
-    t = {k: pd.concat(v, ignore_index=True) for k, v in parts.items()}
+    # Fixed row order, so an identical re-run produces byte-identical CSVs and git
+    # shows no change - a re-run leaving `git status` clean proves reproducibility.
+    sort_keys = {"checks": ["vintage"], "zero_balance": ["vintage", "code"],
+                 "vintage": ["vintage"], "obs_year": ["vintage", "obs_year"],
+                 "events_year": ["vintage", "event_year"]}
+    t = {k: pd.concat(v, ignore_index=True).sort_values(sort_keys[k], ignore_index=True)
+         for k, v in parts.items()}
     full_run = sorted(years) == found
     if full_run:
         OUT.mkdir(parents=True, exist_ok=True)
