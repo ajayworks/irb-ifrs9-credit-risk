@@ -1,0 +1,85 @@
+# Margin of conservatism framework.
+# Reference: EBA/GL/2017/16, as consolidated into PRA SS4/24.
+#
+# MoC applies to REGULATORY estimates only. It must NOT be applied to IFRS 9
+# parameters, which are required to be unbiased.
+#
+# Each item states the deficiency, its direction of bias, how it is quantified,
+# and the resulting add-on. An MoC table with an empty "quantification" column is
+# not a MoC framework - it is a list of excuses.
+
+categories:
+
+  A1:
+    name: "Data deficiencies"
+    items:
+      - id: A1.1
+        deficiency: "Delinquency reported in 30-day buckets; 90 DPD not exactly observable"
+        direction: "Understates observed default rate (defaults recognised late)"
+        quantification: "Re-run DoD at bucket 3 vs bucket 4; take half the gap"
+        add_on_pd: null          # populated by the pipeline
+        status: pending
+      - id: A1.2
+        deficiency: "Materiality thresholds not observable - arrears amount not reported"
+        direction: "Overstates default rate (immaterial arrears counted)"
+        quantification: "Expert judgement, benchmarked to published materiality impact studies"
+        add_on_pd: null
+        status: pending
+      - id: A1.3
+        deficiency: "Incomplete workouts excluded from the LGD reference data set"
+        direction: "Understates LGD (long workouts are the bad ones)"
+        quantification: "Difference between LGD with and without modelled open cases"
+        add_on_lgd: null
+        status: pending
+
+  A2:
+    name: "Methodological deficiencies"
+    items:
+      - id: A2.1
+        deficiency: "Unlikeliness-to-pay proxied by disposition codes rather than assessed"
+        direction: "Uncertain - both directions possible"
+        quantification: "Compare DoD variants dpd_only vs baseline"
+        add_on_pd: null
+        status: pending
+      - id: A2.2
+        deficiency: "LGD discount rate is a judgement with material sensitivity"
+        direction: "Understates LGD if the rate is set too low"
+        quantification: "LGD at the upper end of the plausible discount rate range"
+        add_on_lgd: null
+        status: pending
+
+  B:
+    name: "Relevant changes in underwriting, risk appetite, collection policy"
+    items:
+      - id: B.1
+        deficiency: "Post-2008 underwriting tightened materially; pre-crisis cohorts may not represent the current book"
+        direction: "Overstates PD if pre-crisis cohorts dominate"
+        quantification: "Compare pre/post-2010 cohort default rates at equal risk grade"
+        add_on_pd: null
+        status: pending
+      - id: B.2
+        deficiency: "COVID forbearance: arrears accrue under forbearance plans in Freddie data"
+        direction: "Overstates PD if counted (85% of 2020 default events were in forbearance); treated by suspending the DPD limb, residual uncertainty in either direction"
+        quantification: "Compare DoD variants baseline vs forbearance_dpd_counts; assess post-forbearance defaults"
+        add_on_pd: null
+        status: pending
+
+  C:
+    name: "General estimation error"
+    items:
+      - id: C.1
+        deficiency: "Statistical uncertainty in the long-run average default rate per grade"
+        direction: "Symmetric; conservatism requires the upper bound"
+        quantification: "Bootstrap the long-run average; take the specified percentile"
+        bootstrap:
+          n_resamples: 2000
+          percentile: 0.75
+          block_years: 1          # block bootstrap preserves within-year correlation
+        add_on_pd: null
+        status: pending
+
+application:
+  # How the add-ons combine. "additive" is the conservative default; document the
+  # choice, since summing independent uncertainties can over-conserve.
+  method: additive
+  apply_before_floor: true    # MoC first, then the regulatory floor, then report both

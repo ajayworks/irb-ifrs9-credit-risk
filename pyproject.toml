@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hcr"
+version = "0.1.0"
+description = "Hybrid credit risk: UK Basel 3.1 IRB capital and IFRS 9 ECL from one parameter set"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Ajay Singh" }]
+dependencies = [
+    "duckdb>=1.0",
+    "polars>=1.0",
+    "pandas>=2.0",
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "scikit-learn>=1.3",
+    "statsmodels>=0.14",
+    "lightgbm>=4.0",
+    "lifelines>=0.28",
+    "pyyaml>=6.0",
+    "matplotlib>=3.7",
+    "pyarrow>=14.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4", "pytest-cov>=4.1", "ruff>=0.4"]
+app = ["streamlit>=1.30", "plotly>=5.18"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"

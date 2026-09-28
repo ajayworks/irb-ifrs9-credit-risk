@@ -1,0 +1,131 @@
+# Definition of default.
+# Reference: EBA/GL/2016/07, as consolidated into PRA SS4/24.
+#
+# Every choice here is a judgement that moves the observed default rate. The
+# pipeline runs all `variants` so the MDD can show the sensitivity rather than
+# asserting one number.
+
+primary:
+  name: baseline
+
+  # Days-past-due limb. Freddie Mac reports delinquency in 30-day buckets, so
+  # 90 DPD is only observable as "bucket >= 3". That granularity limitation is a
+  # Category A margin-of-conservatism item - see config/moc.yaml.
+  dpd_bucket_threshold: 3        # bucket 3 = 90-119 days
+  dpd_days_equivalent: 90
+
+  # Materiality thresholds. NOT observable in this dataset: arrears amounts are
+  # not reported separately from balance. Recorded here so the deviation is
+  # explicit in documentation rather than silent.
+  materiality:
+    observable: false
+    absolute_gbp: null
+    relative_pct: null
+    moc_category: A1
+
+  # Zero-balance codes, VERIFIED against "SFLLD Disclosure Changes - Effective
+  # July 2026" (Release 47, v1.2, last updated 6/2026). The loader rejects any
+  # code not listed here, so a future code change fails loudly.
+  #
+  # Correction history: the first draft of this list was unverified and wrong.
+  # It included 97 and 98, which do not exist, and 96, which is a defect
+  # repurchase - a NON-credit exit that would have overstated the default rate.
+  zero_balance_codes:
+    "01": {label: "Prepaid or Matured (Voluntary Payoff)",           treatment: non_default_exit}
+    "02": {label: "Third Party Sale",                                treatment: default}
+    "03": {label: "Short Sale or Charge Off",                        treatment: default}
+    "09": {label: "REO Disposition",                                 treatment: default}
+    "15": {label: "Whole Loan Sales",                                treatment: default_judgement}
+    "16": {label: "Reperforming Loan Securitizations",               treatment: non_default_exit}
+    "96": {label: "Confirmed Underwriting or Major Servicing Defect prior to credit event",
+           treatment: non_default_exit}
+
+  # Unlikeliness-to-pay limb: exits that are credit events.
+  #  - 02/03/09 are unambiguous credit events.
+  #  - 15 is a JUDGEMENT. Freddie's whole loan sales are predominantly non-performing
+  #    loan sales, and EBA/GL/2016/07 treats a sale at a material credit-related loss
+  #    as unlikeliness to pay. Check it: if ~all code-15 exits were already 90+ DPD,
+  #    the DPD limb catches them anyway and the choice is immaterial. The variant
+  #    `exclude_whole_loan_sales` below quantifies the sensitivity.
+  #  - 16 exits while reperforming and 96 is a repurchase for a defect "prior to
+  #    credit event" - both are censored, not defaulted.
+  utp_zero_balance_codes: ["02", "03", "09", "15"]
+  utp_codes_verified_against_user_guide: true
+  utp_codes_verified_source: "SFLLD Disclosure Changes, Effective July 2026, v1.2"
+
+  # Delinquency status "RA" (REO Acquisition) is mapped to bucket 99 by the loader,
+  # so it triggers default through the DPD limb. "XX" (Not Available) becomes NULL
+  # and is counted in the data quality report - it is NOT silently treated as current.
+
+  # Probation before a defaulted account may return to performing.
+  probation_months: 3
+  # EBA/GL/2016/07: after a DISTRESSED RESTRUCTURING the minimum is one year. Applied
+  # to any loan modified at or before the cure (Freddie modification_flag Y or P).
+  # The first draft applied 3 months to everyone - non-compliant, and it inflated
+  # re-default counts on modified loans.
+  probation_months_distressed_restructuring: 12
+
+  # Treatment of a second default after a cure.
+  # "new"          -> counts as a separate default event
+  # "continuation" -> treated as the same default if within `redefault_window_months`
+  redefault_treatment: new
+  redefault_window_months: 12
+
+  # Forbearance (borrower_assistance_plan = 'F'). In Freddie data arrears KEEP
+  # ACCRUING under a forbearance plan, so counting them turns COVID forbearance into
+  # mass "default": 85% of 2020 default events on the starter vintages occurred while
+  # in forbearance. (The first draft claimed forbearance SUPPRESSED defaults - true of
+  # UK payment holidays, wrong for this dataset - and declared a setting the code never
+  # implemented.)
+  #   suspend_dpd - DPD limb switched off while a plan is active; UTP still applies.
+  #                 Mirrors qualifying payment moratoria under EBA/GL/2020/02.
+  #   count_dpd   - arrears under forbearance count as normal (variant below).
+  forbearance_treatment: suspend_dpd
+
+# Variants run alongside the primary definition for sensitivity analysis.
+variants:
+  - name: dpd_only
+    description: "90 DPD trigger only, no unlikeliness-to-pay limb"
+    dpd_bucket_threshold: 3
+    utp_zero_balance_codes: []
+    probation_months: 3
+    redefault_treatment: new
+
+  - name: strict_120dpd
+    description: "120 DPD trigger - tests sensitivity to the DPD threshold"
+    dpd_bucket_threshold: 4
+    probation_months: 3
+    redefault_treatment: new
+
+  - name: long_probation
+    description: "12-month probation - EBA minimum is 3, tests the cure rule"
+    dpd_bucket_threshold: 3
+    probation_months: 12
+    redefault_treatment: new
+
+  - name: redefault_continuation
+    description: "Re-default within 12 months treated as one continuing default"
+    dpd_bucket_threshold: 3
+    probation_months: 3
+    redefault_treatment: continuation
+    redefault_window_months: 12
+
+  - name: exclude_whole_loan_sales
+    description: "Code 15 (whole loan sales) treated as censored rather than default"
+    dpd_bucket_threshold: 3
+    utp_zero_balance_codes: ["02", "03", "09"]
+    probation_months: 3
+    redefault_treatment: new
+
+  - name: forbearance_dpd_counts
+    description: "Arrears accrued under forbearance count toward 90 DPD"
+    forbearance_treatment: count_dpd
+
+  - name: uniform_3m_probation
+    description: "3-month probation for all cures, including restructured loans (non-compliant; sensitivity only)"
+    probation_months_distressed_restructuring: 3
+
+# Performance window for the one-year default flag used in PD estimation.
+observation:
+  horizon_months: 12
+  require_full_horizon: true    # drop observations without a complete 12m window

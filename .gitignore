@@ -1,0 +1,46 @@
+# Raw and derived data - never committed. Reproduce via docs/DATA.md.
+data/raw/
+data/interim/
+data/processed/
+*.duckdb
+*.duckdb.wal
+*.parquet
+
+# Freddie Mac's own documentation (user guide, file layout, headers). Kept locally
+# for reference; the repo links to the official source rather than redistributing it.
+docs/freddie/
+
+# Credentials
+.env
+*.key
+fred_api_key*
+
+# DuckDB spill files (should go to the system temp dir, but never commit strays)
+.tmp/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Generated outputs - regenerate with the pipeline
+outputs/*.png
+outputs/*.pdf
+outputs/*.xlsx
+!outputs/.gitkeep

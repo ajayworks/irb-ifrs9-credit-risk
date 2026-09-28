@@ -1,0 +1,77 @@
+# Data sources and sampling.
+#
+# Paths are relative to the repo root unless absolute. Raw data is NOT committed -
+# see .gitignore. The pipeline is reproducible from the download instructions in
+# docs/DATA.md.
+
+paths:
+  raw: "data/raw"
+  interim: "data/interim"
+  processed: "data/processed"
+  database: "data/hcr.duckdb"
+
+sources:
+  freddie_mac:
+    enabled: true
+    # Requires free registration at freddiemac.com/research/datasets/sf-loanlevel-dataset
+    # Download from the SFLLD Data tab of Clarity Data Intelligence - NOT the CRT tab.
+    #
+    # FORMAT: Release 47, effective July 2026. Files were renamed (orig_/perf_), fields
+    # added and moved, and the SIGN CONVENTION on recoveries flipped. Pre-July-2026 files
+    # are rejected by the loader's column-count guard. See docs/DATA.md.
+    release: 47
+    raw_dir: "data/raw/freddie"
+    expected_columns: {origination: 31, performance: 35}
+    delimiter: "|"
+    # Header rows and trailing delimiters are auto-detected per file.
+    #
+    # Patterns cover the Release 47 standard names (orig_YYYYQn.txt, perf_YYYYQn.txt)
+    # and plausible sample-file names. If your unzipped files are named differently,
+    # add a pattern here - the loader lists what it found when nothing matches.
+    origination_patterns: ["**/orig_*.txt", "**/sample_orig_*.txt", "**/*_orig_*.txt"]
+    performance_patterns: ["**/perf_*.txt", "**/sample_perf_*.txt", "**/sample_svcg_*.txt",
+                           "**/*_perf_*.txt", "**/*_svcg_*.txt"]
+    #
+    # Use Freddie's 50,000-loan-per-vintage-year SAMPLE files, not the full files.
+    # All of 1999-2025 is ~1.35m loans across the full cycle - enough for the project.
+    # Document how Freddie draws the sample (see the General User Guide) in the MDD's
+    # representativeness section.
+    use_sample_files: true
+    starter_years: [2006, 2007, 2018]
+    full_cycle_years: {start: 1999, end: 2025}
+
+  sba:
+    enabled: false                     # SME workstream, phase 2
+    # data.sba.gov - FOIA 7(a) and 504 datasets. No registration required.
+    path: "data/raw/sba/foia_7a.csv"
+
+  macro:
+    enabled: true
+    # FRED API key: https://fred.stlouisfed.org/docs/api/api_key.html
+    # Store as env var FRED_API_KEY. Never commit it.
+    fred_series:
+      unemployment_rate: "UNRATE"
+      gdp_real: "GDPC1"
+      mortgage_rate_30y: "MORTGAGE30US"
+      cpi: "CPIAUCSL"
+      fed_funds: "FEDFUNDS"
+    # FHFA house price index - direct download, no key needed.
+    fhfa_hpi_url: "https://www.fhfa.gov/hpi"
+    state_level: true
+
+synthetic:
+  # Used until the real download lands, and permanently for unit tests.
+  enabled: true
+  n_loans: 20000
+  start_period: "2004-01"
+  end_period: "2021-12"
+  random_seed: 7
+
+validation:
+  # Assertions run after panel construction. Failures stop the pipeline.
+  # Key is (loan_id, CALENDAR month). loan_age is NOT a valid time key: Freddie
+  # resets it when a loan is modified. See default_def/panel.py.
+  assert_no_duplicate_loan_months: true
+  assert_balance_non_negative: true
+  assert_known_zero_balance_codes: true
+  max_missing_pct_warn: 0.05

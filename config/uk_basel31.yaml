@@ -1,0 +1,65 @@
+# UK Basel 3.1 parameters.
+# Source: PRA PS1/26 (Implementation of Basel 3.1: final rules, January 2026)
+#         PRA SS4/24 (Credit risk: IRB approach, updated January 2026)
+# Effective 1 January 2027.
+#
+# EVERY number in this file must be traceable to a published rule. If you change
+# one, update the `source` note with it. Do not take figures from textbooks or blogs.
+
+effective_date: "2027-01-01"
+
+confidence_level: 0.999
+
+# The 1.06 scaling factor from Basel II is REMOVED under Basel 3.1. Do not reinstate.
+scaling_factor: 1.0
+
+# Supervisory asset correlations. Prescribed by the regulator - never estimated.
+correlation:
+  residential_mortgage: 0.15
+  qrre: 0.04
+  # other_retail uses the supervisory function R = 0.03w + 0.16(1-w),
+  # w = (1 - exp(-35*PD)) / (1 - exp(-35))
+  other_retail:
+    low: 0.03
+    high: 0.16
+    k: 35.0
+  # corporate SME: R = 0.12w + 0.24(1-w) - 0.04*(1 - (S-5)/45), w uses k=50
+  corporate_sme:
+    low: 0.12
+    high: 0.24
+    k: 50.0
+    size_adjustment: 0.04
+    turnover_floor_m: 5.0
+    turnover_cap_m: 50.0
+
+# PD input floors. Note the old blanket 0.03% floor no longer applies to these classes.
+pd_floor:
+  residential_mortgage: 0.0010      # 0.10%
+  qrre_transactor: 0.0010           # 0.10%
+  qrre_revolver: 0.0005             # 0.05%
+  other_retail: 0.0005              # 0.05%
+
+# LGD input floors. Residential mortgages are floored at BOTH levels simultaneously.
+lgd_floor:
+  residential_mortgage_account: 0.05        # 5%, per account
+  residential_mortgage_portfolio: 0.10      # 10%, exposure-weighted portfolio average
+  qrre: 0.50                                # 50%, transactors and revolvers
+  other_unsecured_retail: 0.30              # 30%
+  # Art.164 CRR Part. PS9/24 set this at 25% in error; corrected to 30%.
+  unsecured_portion_partially_secured: 0.30
+
+# Output floor: RWA_final = max(RWA_IRB, floor * RWA_SA).
+# Full 72.5% applies from 31 December 2030.
+output_floor:
+  2027: 0.550
+  2028: 0.600
+  2029: 0.650
+  2030: 0.700
+  2031: 0.725
+
+# Retail exposures have NO maturity adjustment. Corporate does.
+maturity_adjustment:
+  applies_to_retail: false
+
+# Minimum capital ratio used only for the RW = K * 12.5 conversion.
+minimum_capital_ratio: 0.08

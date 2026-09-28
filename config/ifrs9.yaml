@@ -1,0 +1,90 @@
+# IFRS 9 expected credit loss configuration.
+#
+# Reminder on the parameter split, because getting this wrong is the classic error:
+#   - IFRS 9 PD/LGD are POINT-IN-TIME and UNBIASED. No margin of conservatism,
+#     no downturn adjustment, no regulatory floors.
+#   - Basel IRB PD/LGD are THROUGH-THE-CYCLE and DELIBERATELY CONSERVATIVE.
+# The same word "PD" means two different quantities. See engines/ecl.py.
+
+discounting:
+  # Discount at the effective interest rate. Not risk-free, not the LGD discount rate.
+  use_effective_interest_rate: true
+  fallback_eir: 0.045
+  periods_per_year: 12
+
+horizon:
+  stage_1_months: 12
+  # Lifetime means EXPECTED life (prepayment-adjusted), not contractual.
+  use_expected_life: true
+  max_lifetime_months: 360
+
+# Significant increase in credit risk.
+sicr:
+  # Relative trigger: lifetime PD now, for the remaining term, versus lifetime PD
+  # expected at origination for that same remaining term.
+  relative:
+    enabled: true
+    # Calibrated PER SEGMENT. A single portfolio-wide multiple is a red flag:
+    # doubling from 0.2% is not the same event as doubling from 5%.
+    thresholds_by_segment:
+      prime_purchase: 2.5
+      prime_refinance: 2.5
+      high_ltv: 2.0
+      investor: 2.0
+      default_threshold: 2.5
+    # Grid used by the calibration analysis in notebooks/09_sicr_calibration
+    calibration_grid: [1.5, 1.75, 2.0, 2.25, 2.5, 3.0, 3.5, 4.0]
+
+  # Absolute backstop: catches exposures already poor at origination, where a
+  # relative test would never trigger.
+  absolute:
+    enabled: true
+    lifetime_pd_threshold: 0.20
+
+  # 30 DPD rebuttable presumption (IFRS 9 5.5.11).
+  dpd_backstop:
+    enabled: true
+    dpd_bucket_threshold: 1      # bucket 1 = 30-59 days
+    rebutted: false
+
+  # Transfer back to Stage 1.
+  cure:
+    months_performing_required: 3
+
+staging:
+  credit_impaired_dpd_bucket: 3   # Stage 3 aligns to the default definition
+  # Stage 3 interest is recognised on the NET carrying amount, not gross.
+  stage3_interest_on_net_carrying_amount: true
+
+# Probability-weighted scenarios. Weights must sum to 1.0 - asserted at load.
+scenarios:
+  upside:
+    weight: 0.20
+    description: "Faster growth, falling unemployment, HPI above trend"
+  base:
+    weight: 0.50
+    description: "Central forecast"
+  downside:
+    weight: 0.20
+    description: "Recession, unemployment up, HPI correction"
+  severe:
+    weight: 0.10
+    description: "Severe but plausible stress"
+
+macro:
+  # Explicit forecasts to this horizon, then revert the systematic factor Z to 0.
+  reasonable_supportable_years: 5
+  mean_reversion:
+    # Z_{t+1} = Z_t * (1 - speed); speed of 1.0 reverts immediately.
+    speed_per_year: 0.35
+    target: 0.0
+  drivers: [unemployment_rate, hpi_growth_yoy, gdp_growth_yoy, mortgage_rate]
+
+post_model_adjustments:
+  enabled: true
+  require_rationale: true
+  require_owner: true
+  require_review_date: true
+  # Overlays carried for more than this long must be either removed or absorbed
+  # into the model. Supervisors have pressed hard on long-lived unexplained PMAs.
+  max_age_months_before_escalation: 18
