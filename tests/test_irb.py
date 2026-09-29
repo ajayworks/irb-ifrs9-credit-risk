@@ -83,7 +83,7 @@ class TestFloors:
     def test_pd_floors_match_uk_rules(self):
         assert irb.apply_pd_floor(0.0001, "residential_mortgage") == pytest.approx(0.0010)
         assert irb.apply_pd_floor(0.0001, "qrre_transactor") == pytest.approx(0.0010)
-        assert irb.apply_pd_floor(0.0001, "qrre_revolver") == pytest.approx(0.0005)
+        assert irb.apply_pd_floor(0.0001, "qrre_revolver") == pytest.approx(0.0010)
         assert irb.apply_pd_floor(0.0001, "other_retail") == pytest.approx(0.0005)
 
     def test_pd_floor_does_not_lower_estimates(self):
@@ -114,20 +114,20 @@ class TestFloors:
 
 class TestOutputFloor:
     def test_phase_in_schedule(self):
-        expected = {2027: 0.550, 2028: 0.600, 2029: 0.650, 2030: 0.700, 2031: 0.725}
+        expected = {2027: 0.600, 2028: 0.650, 2029: 0.700, 2030: 0.725}
         for year, pct in expected.items():
             assert irb.apply_output_floor(100.0, 250.0, year)["floor_pct"] == pytest.approx(pct)
 
     def test_floor_binds_for_low_risk_weight_book(self):
         r = irb.apply_output_floor(100.0, 250.0, 2027)
         assert r["floor_binding"]
-        assert r["rwa_final"] == pytest.approx(137.5)
-        assert r["uplift"] == pytest.approx(37.5)
+        assert r["rwa_final"] == pytest.approx(150.0)
+        assert r["uplift"] == pytest.approx(50.0)
 
     def test_irb_governs_when_above_the_floor(self):
-        r = irb.apply_output_floor(180.0, 250.0, 2027)
+        r = irb.apply_output_floor(160.0, 250.0, 2027)
         assert not r["floor_binding"]
-        assert r["rwa_final"] == pytest.approx(180.0)
+        assert r["rwa_final"] == pytest.approx(160.0)
 
     def test_beyond_schedule_uses_full_floor(self):
         assert irb.apply_output_floor(100.0, 250.0, 2040)["floor_pct"] == pytest.approx(0.725)

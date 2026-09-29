@@ -17,13 +17,21 @@ Freddie Mac loan-level data, 27 origination vintages (1999–2025), 1.35 million
 
 ![Regulatory vs IFRS 9 PD, 1999-2024](outputs/calibration/bridge_by_year.png)
 
-**One set of grades, two PDs.** The regulatory PD sits 1.5–1.8× above the IFRS 9 PD in
-benign years; in 2008 the IFRS 9 PD is almost double it (3.29% vs 1.70%). Neither is
-wrong - one is built to be stable and conservative, the other to be unbiased now.
+**One set of grades, two PDs.** Each point is a December snapshot and the PD for the
+following 12 months - so "2008" means loans observed in December 2008, defaulting during
+2009. The regulatory PD sits 1.5–1.8× above the implied point-in-time PD in benign years;
+for the 2008 snapshot the point-in-time PD is almost double it (3.29% vs 1.70%). Neither
+is wrong - one is built to be stable and conservative, the other to be unbiased now.
+
+**What "implied point-in-time PD" means here:** it is backed out from the defaults that
+actually happened (the realised economic factor each year), so it matches the observed
+default rate by construction. It shows what an unbiased IFRS 9 PD *should have been*. A
+forward-looking IFRS 9 PD needs the economic factor forecast from macro scenarios - the
+next workstream.
 
 | | |
 |---|---|
-| Long-run average one-year default rate | 1.17% (1999–2024) |
+| Long-run average one-year default rate | 1.17% pooled across all loan-months, 1.12% averaging years equally (1999–2024). Grade PDs use equal weighting per year |
 | Behavioural scorecard Gini — development / out-of-sample / **out-of-time** | 0.804 / 0.804 / **0.805** |
 | Rating grades | 11, default rates monotonic from 0.01% to 40% |
 | UK 0.10% PD floor | binds for grades 1–3, 27.8% of the book |
@@ -132,15 +140,21 @@ regulatory minimum.
 config/           uk_basel31 · default_definition · ifrs9 · moc · data
 src/hcr/
   config.py       loading + validation
-  data/           synthetic generator; Freddie Mac / SBA / FRED loaders
+  data/           synthetic generator; Freddie Mac loader
   default_def/    DuckDB panel builder and DoD state machine
-  features/       WOE, information value, score scaling
-  pd/             Vasicek TTC↔PIT; scorecard; calibration
-  engines/        irb.py · ecl.py · standardised.py
-  lgd/ ead/       workout LGD, CCF, prepayment
-  validation/     discrimination, calibration, stability
+  features/       WOE, information value, monotonic binning, score scaling
+  pd/             development sample; scorecard; calibration; Vasicek TTC↔PIT
+  engines/        irb.py · ecl.py
 tests/            143 tests
-docs/             DATA.md · MDD · validation report
+docs/             DATA.md · FINDINGS_LOG.md
+```
+
+Planned, not yet built: SBA and FRED/FHFA loaders, the revised standardised approach
+(`engines/standardised.py`), workout LGD (`lgd/`), EAD/CCF and prepayment (`ead/`), the
+validation suite (`validation/`), the MDD and the validation report. The empty package
+folders are placeholders for these.
+
+```
 ```
 
 ---
@@ -157,7 +171,7 @@ portfolio-level for mortgages, 50% QRRE, 30% other unsecured. The mortgage portf
 floor is applied as a proportional scale-up, since it binds on the average not the account.
 
 **Output floor** — `max(RWA_IRB, floor% × RWA_SA)` across the 2027→2030 phase-in
-(55/60/65/70/72.5%).
+(60% from 2027, 65%, 70%, fully loaded 72.5% from 1 January 2030, per PS1/26).
 
 **Vasicek bridge** — `PD_PIT = Φ[(Φ⁻¹(PD_TTC) − √R·Z)/√(1−R)]`, with `Z > 0` benign.
 Two identities are asserted in tests: `E[PD_PIT]` over `Z ~ N(0,1)` equals `PD_TTC`, and

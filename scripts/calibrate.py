@@ -48,15 +48,15 @@ def chart(bridge: pd.DataFrame, path: Path) -> None:
     ax.plot(x, bridge.regulatory_pd * 100, lw=2.2, color="#1f4e79",
             label="Regulatory PD (through-the-cycle, with MoC and floor)")
     ax.plot(x, bridge.pit_pd * 100, lw=2.2, color="#c0504d",
-            label="IFRS 9 PD (point-in-time)")
+            label="Implied point-in-time PD (from realised defaults)")
     ax.fill_between(x, bridge.regulatory_pd * 100, bridge.pit_pd * 100,
                     where=bridge.pit_pd > bridge.regulatory_pd, color="#c0504d", alpha=0.15,
-                    interpolate=True, label="IFRS 9 above regulatory")
+                    interpolate=True, label="Point-in-time above regulatory")
     ax.set_ylabel("One-year PD, portfolio average (%)")
     ax.set_title("One set of grades, two PDs: the gap reverses in a downturn")
     ax.grid(alpha=0.3)
     ax.legend(frameon=False, loc="upper right")
-    ax.set_xlabel("Snapshot year (PD for the following 12 months)")
+    ax.set_xlabel("December snapshot year (PD for the following 12 months, e.g. 2008 = defaults during 2009)")
     fig.tight_layout()
     fig.savefig(path, dpi=150)
     plt.close(fig)

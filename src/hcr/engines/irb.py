@@ -164,7 +164,8 @@ def apply_portfolio_lgd_floor(lgd, ead, exposure_class: str) -> dict:
 
 
 def apply_output_floor(rwa_irb_total: float, rwa_sa_total: float, year: int) -> dict:
-    """RWA_final = max(RWA_IRB, floor% * RWA_SA), with the 2027-2030 phase-in."""
+    """RWA_final = max(RWA_IRB, floor% * RWA_SA), with the PS1/26 phase-in (60% in 2027
+    rising to 72.5% from 2030)."""
     schedule = _CFG["output_floor"]
     floor = schedule.get(year, schedule[max(schedule)])
     floored = floor * rwa_sa_total

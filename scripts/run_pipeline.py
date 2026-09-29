@@ -113,7 +113,7 @@ def main() -> None:
     rwa_irb = rw * ead
     rwa_sa = 0.35 * ead          # illustrative standardised risk weight
     print(f"\nAgainst a standardised RWA of {rwa_sa:,.0f}:")
-    for year in (2027, 2028, 2029, 2030, 2031):
+    for year in (2027, 2028, 2029, 2030):
         r = irb.apply_output_floor(rwa_irb, rwa_sa, year)
         flag = f"FLOOR BINDS  +{r['uplift']:,.0f}" if r["floor_binding"] else "IRB governs"
         print(f"  {year}  floor {r['floor_pct']:>5.1%}  -> {r['rwa_floored']:>12,.0f}"

@@ -63,6 +63,11 @@ standard-normal scale is also what the IFRS 9 macro step will need, to map scena
 
 ### The bridge
 
+*Correction note (review):* the "IFRS 9 PD" below is the **implied** point-in-time PD,
+backed out from realised defaults - it equals the observed default rate by construction.
+A forward-looking IFRS 9 PD requires Z forecast from macro scenarios (next workstream).
+Years are December snapshot years: "2008" = loans observed December 2008, defaulting in 2009.
+
 | | Regulatory PD | IFRS 9 PD | Regulatory ÷ IFRS 9 |
 |---|---|---|---|
 | Benign years 2000–2006 | | | 1.54–1.84× |

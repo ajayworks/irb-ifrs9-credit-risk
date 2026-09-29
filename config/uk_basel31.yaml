@@ -36,7 +36,10 @@ correlation:
 pd_floor:
   residential_mortgage: 0.0010      # 0.10%
   qrre_transactor: 0.0010           # 0.10%
-  qrre_revolver: 0.0005             # 0.05%
+  # Basel sets 0.05% transactors / 0.10% revolvers; the PRA raised transactors to 0.10%
+  # (super-equivalent). Revolvers cannot sit below the Basel 0.10%. First draft had 0.05%
+  # here - wrong. Verify both against the CRR Part rule text.
+  qrre_revolver: 0.0010             # 0.10%
   other_retail: 0.0005              # 0.05%
 
 # LGD input floors. Residential mortgages are floored at BOTH levels simultaneously.
@@ -45,17 +48,19 @@ lgd_floor:
   residential_mortgage_portfolio: 0.10      # 10%, exposure-weighted portfolio average
   qrre: 0.50                                # 50%, transactors and revolvers
   other_unsecured_retail: 0.30              # 30%
-  # Art.164 CRR Part. PS9/24 set this at 25% in error; corrected to 30%.
+  # Art.164 CRR Part. Reported in summaries of the final rules as corrected from 25% in the
+  # PS9/24 near-final text to 30% (the CP16/22 intention). Verify against the rule text.
   unsecured_portion_partially_secured: 0.30
 
 # Output floor: RWA_final = max(RWA_IRB, floor * RWA_SA).
-# Full 72.5% applies from 31 December 2030.
 output_floor:
-  2027: 0.550
-  2028: 0.600
-  2029: 0.650
-  2030: 0.700
-  2031: 0.725
+  # PS1/26 transitional schedule: 60% from 1 Jan 2027, 65% 2028, 70% 2029, fully loaded
+  # 72.5% from 1 Jan 2030. (First draft had 55% in 2027 and full loading in 2031 - an
+  # older, pre-delay schedule.) Verify against the PS1/26 rule text before relying on it.
+  2027: 0.600
+  2028: 0.650
+  2029: 0.700
+  2030: 0.725
 
 # Retail exposures have NO maturity adjustment. Corporate does.
 maturity_adjustment:
