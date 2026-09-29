@@ -1,0 +1,50 @@
+# PD calibration and the TTC -> PIT bridge.
+#
+# Input: the ranking model (config/scorecard.yaml) and its master-scale grades.
+# Output: a regulatory (IRB) PD per grade, and point-in-time (IFRS 9) PDs per grade
+# and year - from ONE set of grades.
+
+observation_years:
+  # Snapshot years whose 12-month outcome is known. Spans 2008-09 and COVID, so the
+  # long-run average covers a full cycle. Calibration uses every year: the out-of-time
+  # hold-out was for testing the RANKING; the LEVEL has to reflect the whole cycle.
+  start: 1999
+  end: 2024
+
+long_run_average:
+  # equal  - arithmetic mean of each grade's annual default rates: every year counts as
+  #          one observation of the cycle. The default approach in EBA/GL/2017/16.
+  # pooled - total defaults / total observations: busy years weigh more. Reported for
+  #          comparison; the choice and its effect go in the MDD.
+  weighting: equal
+  # Default rates must rise with the grade. Enforced by pooling adjacent violators,
+  # weighted by observations, if the raw averages ever cross.
+  enforce_monotonic: true
+
+regulatory:
+  exposure_class: residential_mortgage     # selects the UK PD floor (0.10%)
+
+pit:
+  # Asset correlation for the Vasicek TTC -> PIT transform.
+  #   estimate - the value at which the implied Z series has unit variance, i.e. Z
+  #              behaves as the standard-normal economic factor the model assumes
+  #   a number - use it as given (e.g. 0.15, the Basel mortgage value, for comparison)
+  #
+  # The Basel 0.15 is a supervisory parameter for the CAPITAL formula and stays there.
+  # It does not fit this rating system's within-grade cyclicality: at 0.15 the implied Z
+  # has a standard deviation of 0.44 and the grade-year likelihood is 624 log-likelihood
+  # units worse than at the estimate (~0.03). The behavioural scorecard absorbs most of
+  # the cycle through grade migration, so what remains within a grade is far calmer.
+  correlation: estimate
+  comparison_correlation: 0.15
+  # Implied Z uses REALISED defaults: it shows what PIT PD should have been each year.
+  # Forecasting Z from macroeconomic scenarios is the IFRS 9 step that follows - and needs
+  # Z on a standard-normal scale, which is why the estimate matters.
+
+bridge:
+  reporting_year: 2024                     # latest snapshot year with a known outcome
+
+capital:
+  # PLACEHOLDER until the LGD model is built. Used only to show risk weights by grade
+  # flowing through the IRB engine; do not quote these risk weights as results.
+  illustrative_downturn_lgd: 0.25

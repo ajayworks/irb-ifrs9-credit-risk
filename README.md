@@ -10,6 +10,30 @@ Built to UK final rules: **PRA PS1/26**, **SS4/24**, **SS1/23**. Effective 1 Jan
 
 ---
 
+## Results so far
+
+Freddie Mac loan-level data, 27 origination vintages (1999–2025), 1.35 million loans,
+75 million loan-months.
+
+![Regulatory vs IFRS 9 PD, 1999-2024](outputs/calibration/bridge_by_year.png)
+
+**One set of grades, two PDs.** The regulatory PD sits 1.5–1.8× above the IFRS 9 PD in
+benign years; in 2008 the IFRS 9 PD is almost double it (3.29% vs 1.70%). Neither is
+wrong - one is built to be stable and conservative, the other to be unbiased now.
+
+| | |
+|---|---|
+| Long-run average one-year default rate | 1.17% (1999–2024) |
+| Behavioural scorecard Gini — development / out-of-sample / **out-of-time** | 0.804 / 0.804 / **0.805** |
+| Rating grades | 11, default rates monotonic from 0.01% to 40% |
+| UK 0.10% PD floor | binds for grades 1–3, 27.8% of the book |
+| IFRS 9 conversion correlation | 0.031 estimated from data (Basel 0.15 kept for capital) |
+
+Every judgement behind these numbers - and every defect found along the way - is in
+[`docs/FINDINGS_LOG.md`](docs/FINDINGS_LOG.md).
+
+---
+
 ## Status
 
 | Workstream | State |
@@ -23,13 +47,14 @@ Built to UK final rules: **PRA PS1/26**, **SS4/24**, **SS1/23**. Effective 1 Jan
 | IFRS 9 ECL engine + staging | Done |
 | WOE / IV / score scaling | Done |
 | Behavioural PD scorecard (ranking) | Done — Gini 0.804 dev / 0.805 out-of-time |
-| TTC calibration, floors, MoC, Vasicek bridge | Next |
+| TTC calibration, floors, MoC, Vasicek bridge | Done — MoC items A1.1, A2.1, B.2 pending quantification |
+| Macro data (FRED, FHFA) → rate spread, indexed LTV, scenario Z | Next |
 | Workout LGD | Not started |
 | EAD / CCF / prepayment | Not started |
 | Validation suite | Not started |
 | Dashboard, MDD, validation report | Not started |
 
-`pytest` — 129 passing.
+`pytest` — 143 passing.
 
 ---
 
@@ -41,7 +66,16 @@ pip install -e ".[dev]"
 
 python -m hcr.data.synthetic        # generate a synthetic panel (~2 min)
 python scripts/run_pipeline.py      # build panel, run DoD variants, demo the engines
-pytest -q                           # 129 tests
+pytest -q                           # 143 tests
+```
+
+With the Freddie Mac sample files in `data/raw/freddie/` (see [`docs/DATA.md`](docs/DATA.md)):
+
+```bash
+python scripts/vintage_summary.py   # loader checks and default history, all vintages
+python scripts/build_pd_sample.py   # annual snapshots for the PD model (~5-15 min)
+python scripts/fit_scorecard.py     # behavioural scorecard -> outputs/scorecard/
+python scripts/calibrate.py         # regulatory + IFRS 9 PD, the bridge -> outputs/calibration/
 ```
 
 Everything runs on synthetic data out of the box. Real data is a drop-in — see
@@ -90,7 +124,7 @@ src/hcr/
   engines/        irb.py · ecl.py · standardised.py
   lgd/ ead/       workout LGD, CCF, prepayment
   validation/     discrimination, calibration, stability
-tests/            129 tests
+tests/            143 tests
 docs/             DATA.md · MDD · validation report
 ```
 

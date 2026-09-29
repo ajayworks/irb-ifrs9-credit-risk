@@ -5,6 +5,98 @@ the MDD's data, definition-of-default and limitations chapters. Newest entry fir
 
 ---
 
+## 2026-09-29 (2) — calibration and the TTC → PIT bridge
+
+**Reproduce:** `python scripts/calibrate.py` (after the sample build and scorecard fit).
+Tables and the chart in `outputs/calibration/`. Settings in `config/calibration.yaml` and
+`config/moc.yaml`.
+
+### Regulatory PD per grade
+
+Long-run average of each grade's one-year default rates, 1999–2024 (26 years including
+2008–09 and COVID), then margin of conservatism, then the UK floor.
+
+| Grade | Long-run average | + MoC C | Floor uplift | **Regulatory PD** |
+|---|---|---|---|---|
+| 1 | 0.014% | 0.003% | 0.083% | **0.100%** |
+| 2 | 0.030% | 0.004% | 0.066% | **0.100%** |
+| 3 | 0.065% | 0.006% | 0.029% | **0.100%** |
+| 4 | 0.154% | 0.012% | — | **0.167%** |
+| 5 | 0.392% | 0.031% | — | **0.423%** |
+| 6 | 0.995% | 0.086% | — | **1.081%** |
+| 7 | 2.189% | 0.169% | — | **2.358%** |
+| 8 | 4.791% | 0.264% | — | **5.055%** |
+| 9 | 8.958% | 0.416% | — | **9.374%** |
+| 10 | 18.348% | 0.658% | — | **19.006%** |
+| 11 | 37.946% | 0.954% | — | **38.900%** |
+
+- **The UK 0.10% floor binds for grades 1–3: 27.8% of observations.** For the best third
+  of the book the floor, not the model, sets capital — model improvements there buy nothing.
+- **Weighting matters.** Pooling years (total defaults / total observations) gives
+  6–35% higher averages than equal weight per year, because crisis years contribute more
+  observations to the riskier grades. Equal weight is used - each year is one draw of
+  the cycle - and the pooled figures are kept for the MDD.
+- Averages were already monotonic across grades; no pooling adjustment was needed.
+- **Margin of conservatism.** Category C (bootstrapping whole years, 75th percentile)
+  adds 2.5–20% of the estimate, most in the thinnest grades. A1.2 and B.1 are assessed as
+  conservative (zero add-on). **A1.1, A2.1 and B.2 are pending quantification** and are
+  printed with every calibration run until resolved.
+
+### PIT correlation — the Basel value does not fit the IFRS 9 conversion
+
+If the correlation in the Vasicek transform is right, the economic factor Z implied by
+each year's defaults behaves as a standard normal. At the Basel mortgage value of 0.15 it
+does not: standard deviation 0.44, mean −0.30. The behavioural scorecard absorbs most of
+the cycle through **grade migration** - loans falling behind move to worse grades - so
+default rates *within* a grade are far calmer than 0.15 assumes.
+
+| Correlation | Z mean | Z std | Grade-year log-likelihood |
+|---|---|---|---|
+| **0.031 (estimated: unit-variance Z)** | **−0.04** | **1.00** | **−2,043** |
+| 0.15 (Basel capital value) | −0.30 | 0.44 | −2,666 |
+
+The estimate simultaneously gives Z a mean of about zero and standard deviation of one,
+and sits on the likelihood plateau (0.01–0.03); the fit deteriorates steeply above it.
+**Capital keeps the prescribed 0.15; the IFRS 9 conversion uses 0.031.** Z on a true
+standard-normal scale is also what the IFRS 9 macro step will need, to map scenarios
+("severe recession ≈ Z of −2") onto PDs.
+
+### The bridge
+
+| | Regulatory PD | IFRS 9 PD | Regulatory ÷ IFRS 9 |
+|---|---|---|---|
+| Benign years 2000–2006 | | | 1.54–1.84× |
+| **2008** | 1.70% | **3.29%** | **0.52×** |
+| 2019 (COVID) | 0.69% | 0.83% | 0.83× |
+| 2024 | 0.88% | 0.79% | 1.10× |
+
+IFRS 9 PD exceeds regulatory PD in 2007–2012 and 2019, and only marginally (ratios
+0.97–0.99) in 2021–23. The relationship reverses in a downturn: regulatory PD is
+designed to be stable and conservative; IFRS 9 PD is designed to be unbiased *now*.
+
+**The hybrid rating system, measured.** Across 2000–2024 the portfolio regulatory PD
+ranges 0.63%–1.85% (2.9×) — it moves because loans migrate between grades — while the
+IFRS 9 PD ranges 0.55%–3.29% (5.9×). A pure through-the-cycle system would show a flat
+regulatory line. This is the design question UK hybrid PD models turn on.
+
+**2024 waterfall, portfolio:** regulatory 0.875% → less floor uplift 0.013pp → less MoC C
+0.047pp → unbiased long-run average 0.816% → Vasicek adjustment (Z = −0.09) −0.024pp →
+**IFRS 9 PD 0.792%**, matching the observed 2024 default rate by construction.
+
+### Capital — placeholder only
+
+With a **placeholder** downturn LGD of 25% (no LGD model yet) the EAD-weighted risk
+weight is 20.0%. It demonstrates the pipeline end to end; it is not a result.
+
+### Open items from this step
+
+- Quantify MoC A1.1 (13-month window), A2.1 (modification-as-default variant) and B.2
+  (forbearance variant) — each needs a variant development sample.
+- Current implied Z uses realised defaults. Forecasting Z from macroeconomic scenarios is
+  the IFRS 9 step.
+
+---
+
 ## 2026-09-29 — behavioural PD scorecard, first fit
 
 **Reproduce:** `python scripts/build_pd_sample.py` then `python scripts/fit_scorecard.py`.
