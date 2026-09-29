@@ -82,7 +82,7 @@ class TestCapital:
 class TestFloors:
     def test_pd_floors_match_uk_rules(self):
         assert irb.apply_pd_floor(0.0001, "residential_mortgage") == pytest.approx(0.0010)
-        assert irb.apply_pd_floor(0.0001, "qrre_transactor") == pytest.approx(0.0010)
+        assert irb.apply_pd_floor(0.0001, "qrre_transactor") == pytest.approx(0.0005)
         assert irb.apply_pd_floor(0.0001, "qrre_revolver") == pytest.approx(0.0010)
         assert irb.apply_pd_floor(0.0001, "other_retail") == pytest.approx(0.0005)
 

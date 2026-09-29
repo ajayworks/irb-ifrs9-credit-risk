@@ -35,10 +35,10 @@ correlation:
 # PD input floors. Note the old blanket 0.03% floor no longer applies to these classes.
 pd_floor:
   residential_mortgage: 0.0010      # 0.10%
-  qrre_transactor: 0.0010           # 0.10%
-  # Basel sets 0.05% transactors / 0.10% revolvers; the PRA raised transactors to 0.10%
-  # (super-equivalent). Revolvers cannot sit below the Basel 0.10%. First draft had 0.05%
-  # here - wrong. Verify both against the CRR Part rule text.
+  # 0.05%. PS9/24 corrected CP16/22's 0.10% error, aligning with Basel (transactors 0.05%,
+  # revolvers 0.10%). Earlier drafts of this file had these reversed or both at 0.10%,
+  # following secondary summaries. Confirm against the CRR Part rule text (Art. 163).
+  qrre_transactor: 0.0005           # 0.05%
   qrre_revolver: 0.0010             # 0.10%
   other_retail: 0.0005              # 0.05%
 

@@ -55,6 +55,12 @@ identifiers in `tests/` are invented, attached to synthetic values. The project 
 affiliated with or endorsed by Freddie Mac, which provides the dataset as is and without
 warranty.
 
+### How this was built
+
+Developed with AI assistance (Anthropic's Claude) for code, documentation and review. I
+directed the work, ran and verified every result on my own machine, and can explain every
+modelling decision; the findings log records each judgement and each defect found.
+
 ---
 
 ## Status
@@ -154,9 +160,6 @@ Planned, not yet built: SBA and FRED/FHFA loaders, the revised standardised appr
 validation suite (`validation/`), the MDD and the validation report. The empty package
 folders are placeholders for these.
 
-```
-```
-
 ---
 
 ## What the engines do
@@ -165,8 +168,8 @@ folders are placeholders for these.
 Retail correlations (0.15 mortgage, 0.04 QRRE, supervisory function for other retail),
 no maturity adjustment, **no 1.06 scaling factor** — removed under Basel 3.1.
 
-**UK floors** — PD floors of 0.10% (mortgages, QRRE transactors) and 0.05% (QRRE
-revolvers, other retail). LGD floors of 5% account-level and 10% exposure-weighted
+**UK floors** — PD floors of 0.10% (UK residential mortgages, QRRE revolvers) and 0.05%
+(QRRE transactors, other retail). LGD floors of 5% account-level and 10% exposure-weighted
 portfolio-level for mortgages, 50% QRRE, 30% other unsecured. The mortgage portfolio
 floor is applied as a proportional scale-up, since it binds on the average not the account.
 
