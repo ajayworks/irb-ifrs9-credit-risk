@@ -32,6 +32,21 @@ wrong - one is built to be stable and conservative, the other to be unbiased now
 Every judgement behind these numbers - and every defect found along the way - is in
 [`docs/FINDINGS_LOG.md`](docs/FINDINGS_LOG.md).
 
+### Data and terms of use
+
+Source: [Freddie Mac Single-Family Loan-Level Dataset](https://www.freddiemac.com/research/datasets/sf-loanlevel-dataset),
+Release 47 sample files. **This repository contains no Freddie Mac data** and none of its
+documentation. To reproduce the results, obtain the files from Freddie Mac under its
+*Terms and Conditions for the Single-Family Loan-Level Dataset* - see
+[`docs/DATA.md`](docs/DATA.md).
+
+This is a noncommercial research project. Published outputs are aggregate results only -
+counts and default rates by year, vintage and grade, and model coefficients - which cannot
+be used to recreate any part of the dataset or identify any individual. The loan
+identifiers in `tests/` are invented, attached to synthetic values. The project is not
+affiliated with or endorsed by Freddie Mac, which provides the dataset as is and without
+warranty.
+
 ---
 
 ## Status
