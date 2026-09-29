@@ -22,13 +22,14 @@ Built to UK final rules: **PRA PS1/26**, **SS4/24**, **SS1/23**. Effective 1 Jan
 | Vasicek TTC ↔ PIT transform | Done |
 | IFRS 9 ECL engine + staging | Done |
 | WOE / IV / score scaling | Done |
-| Scorecard fitting + calibration | Next |
+| Behavioural PD scorecard (ranking) | Done — Gini 0.804 dev / 0.805 out-of-time |
+| TTC calibration, floors, MoC, Vasicek bridge | Next |
 | Workout LGD | Not started |
 | EAD / CCF / prepayment | Not started |
 | Validation suite | Not started |
 | Dashboard, MDD, validation report | Not started |
 
-`pytest` — 103 passing.
+`pytest` — 129 passing.
 
 ---
 
@@ -40,7 +41,7 @@ pip install -e ".[dev]"
 
 python -m hcr.data.synthetic        # generate a synthetic panel (~2 min)
 python scripts/run_pipeline.py      # build panel, run DoD variants, demo the engines
-pytest -q                           # 103 tests
+pytest -q                           # 129 tests
 ```
 
 Everything runs on synthetic data out of the box. Real data is a drop-in — see
@@ -89,7 +90,7 @@ src/hcr/
   engines/        irb.py · ecl.py · standardised.py
   lgd/ ead/       workout LGD, CCF, prepayment
   validation/     discrimination, calibration, stability
-tests/            103 tests
+tests/            129 tests
 docs/             DATA.md · MDD · validation report
 ```
 

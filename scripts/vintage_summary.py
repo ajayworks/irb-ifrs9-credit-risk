@@ -32,17 +32,6 @@ pd.set_option("display.width", 220)
 pd.set_option("display.max_rows", 200)
 
 
-def data_end_period(years: list[int]) -> str:
-    """Last reporting month of the most recent vintage - always active at data end."""
-    latest = max(years)
-    perf = [f for f in F.discover()["performance"] if F._file_year(f) == latest][0]
-    con = P.connect(":memory:")
-    raw = con.execute(
-        f"SELECT MAX(column01) FROM read_csv('{perf}', delim='|', header=false, "
-        f"all_varchar=true, quote='', escape='')").fetchone()[0]
-    return f"{raw[:4]}-{raw[4:6]}"
-
-
 def summarise_vintage(year: int, cut_off: str) -> dict[str, pd.DataFrame]:
     db = Path(tempfile.gettempdir()) / f"hcr_vintage_{year}.duckdb"
     for suffix in ("", ".wal"):
@@ -110,12 +99,12 @@ def summarise_vintage(year: int, cut_off: str) -> dict[str, pd.DataFrame]:
 
 
 def main(argv: list[str]) -> None:
-    found = sorted({F._file_year(f) for f in F.discover()["origination"]} - {None})
+    found = F.vintages()
     years = [int(a) for a in argv] or found
     missing = set(years) - set(found)
     if missing:
         raise SystemExit(f"No files for vintages {sorted(missing)}")
-    cut_off = data_end_period(found)
+    cut_off = F.data_end_period()
     print(f"{len(years)} vintages, observation cut-off {cut_off}")
 
     parts: dict[str, list[pd.DataFrame]] = {}

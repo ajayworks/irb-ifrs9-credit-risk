@@ -1,0 +1,71 @@
+# Behavioural PD scorecard - ranking model.
+#
+# Calibration (TTC, floors, MoC) and the TTC -> PIT bridge are separate steps that
+# consume this model's score. This file governs RANKING only.
+
+sample:
+  snapshot_month: 12                 # annual December cohorts
+  path: "data/processed/pd_sample"
+
+split:
+  # Out-of-time: snapshots from this year onwards are never used for fitting.
+  # Development years 1999-2016 include the 2008-09 downturn, so the model learns to
+  # rank through a full cycle; 2017-2024 tests it on a period it has not seen,
+  # including COVID.
+  oot_from_year: 2017
+  # Out-of-sample: a random 30% of LOANS (not rows) in the development years, so the
+  # same loan never appears in both fitting and testing.
+  oos_share: 0.30
+  seed: 20260929
+
+binning:
+  numeric:
+    max_bins: 8
+    fine_bins: 20
+    # The textbook "5% of the population per bin" rule is for small samples. Here it
+    # would merge 30- and 60-day arrears (1-2% of loans, default rates in the tens of
+    # percent) into "current" and destroy the strongest behavioural signal. With
+    # millions of observations a 0.5% bin still holds tens of thousands of loans;
+    # min_bads keeps every bin's default rate statistically stable.
+    min_share: 0.005
+    min_bads: 100
+  categorical:
+    min_share: 0.005
+    min_bads: 100
+
+selection:
+  min_iv: 0.02                       # below this a driver carries no useful signal
+  # Behavioural delinquency drivers legitimately exceed 0.5, so high IV is FLAGGED for
+  # review (leakage check), not dropped automatically.
+  flag_iv_above: 0.5
+  max_abs_correlation: 0.70          # between WOE-transformed drivers; keep higher IV
+  max_p_value: 0.001
+
+features:
+  exclude:
+    # Freddie's estimated current LTV is 100% missing before 2017, so it would be blank
+    # for every development observation. Replacement: HPI-indexed current LTV from FHFA.
+    - eltv
+    # Loan size is a proxy for geography and vintage house prices, not borrower risk,
+    # and it drifts with nominal price levels - unstable out of time.
+    - orig_upb
+
+scaling:
+  pdo: 20                            # points to double the odds
+  base_score: 600
+  base_odds: 50                      # 600 points = 50:1 good:bad
+
+# PD master scale: upper PD bound of each grade. Doubling bands are the usual design:
+# each grade is roughly twice as risky as the one below. The last grade is open-ended.
+master_scale:
+  - 0.0005
+  - 0.0010
+  - 0.0020
+  - 0.0040
+  - 0.0080
+  - 0.0160
+  - 0.0320
+  - 0.0640
+  - 0.1280
+  - 0.2560
+  - 1.0000

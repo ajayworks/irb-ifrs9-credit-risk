@@ -5,6 +5,107 @@ the MDD's data, definition-of-default and limitations chapters. Newest entry fir
 
 ---
 
+## 2026-09-29 — behavioural PD scorecard, first fit
+
+**Reproduce:** `python scripts/build_pd_sample.py` then `python scripts/fit_scorecard.py`.
+Tables in `outputs/scorecard/`. Settings in `config/scorecard.yaml`.
+
+### Development sample
+
+Annual December snapshots of performing loans; target = default in the next 12 months.
+**5,782,547 snapshots from 1,248,747 loans, 67,399 defaults, one-year default rate
+1.166%** — within 0.01pp of the 1.1745% from all monthly observations, so the annual
+snapshot design does not distort the default rate. The 2025 vintage contributes nothing
+yet: its first December window runs past the data end.
+
+| Split | Definition | Snapshots | Default rate |
+|---|---|---|---|
+| Development | 1999–2016, 70% of loans | 2,390,630 | 1.41% |
+| Out-of-sample | 1999–2016, the other 30% of loans | 1,023,184 | 1.42% |
+| Out-of-time | 2017–2024, all loans | 2,368,733 | 0.81% |
+
+The out-of-sample split is by **loan**, via an MD5 hash, so no loan is on both sides and
+the split is identical on every machine.
+
+### Driver findings
+
+- **Freddie's estimated current LTV is 100% missing for every snapshot year before
+  2017** (84–91% populated after). It would be blank for every development observation,
+  so it is excluded. Replacement: current LTV indexed with FHFA state house prices.
+- **Binning thresholds.** The textbook 5%-per-bin rule would merge 30- and 60-day arrears
+  into "current" and destroy the strongest signal. With millions of observations a 0.5%
+  bin holds tens of thousands of loans; bins also need at least 100 defaults.
+- **Origination interest rate is partly a proxy for when the loan was written** —
+  rank correlation with vintage −0.76 (mean rate ~8% in 2000, under 4% by 2016). It still
+  adds 0.007 Gini overall and in 23 of 26 years, including out-of-time, because within a
+  year a higher rate reflects risk-based pricing. Kept for now; **to be replaced by the
+  spread over the market rate at origination** once the macro series is loaded.
+
+### Driver selection — 24 candidates, 13 selected
+
+| Driver | IV | Outcome |
+|---|---|---|
+| Worst delinquency, last 12 months | 2.03 | Selected (−0.584) |
+| Months delinquent, last 12 months | 1.96 | Dropped — correlation 0.98 with the above |
+| Current delinquency | 1.71 | Selected (−0.396) |
+| Credit score | 0.81 | Selected (−0.348) |
+| Origination rate | 0.65 | Selected (−0.376) — flagged, see above |
+| Prior default | 0.36 | Dropped in regression, p = 0.045 — captured by the delinquency history |
+| Original term | 0.27 | Selected (−0.295) |
+| Original CLTV | 0.24 | Selected (−0.602) |
+| Original LTV | 0.23 | Dropped — correlation 0.94 with CLTV |
+| DTI | 0.22 | Selected (−0.431) |
+| Channel | 0.20 | Selected (−0.124) |
+| Months on book | 0.16 | Selected (−0.331) |
+| MI cover | 0.12 | Dropped — wrong sign (collinear with CLTV: MI is required above 80%) |
+| Modified | 0.10 | Dropped — wrong sign: modification follows arrears already captured; conditional on them it reduces risk |
+| Multiple borrowers | 0.10 | Selected (−0.598) |
+| State | 0.07 | Selected (−0.850) |
+| Loan purpose | 0.07 | Selected (−0.347) |
+| Balance outstanding / original | 0.06 | Selected (−0.551) |
+| HARP, property type, occupancy, first-time buyer, units, forbearance in last 12m | < 0.02 | Dropped — IV below minimum |
+
+All coefficients negative, as required for a model of default with WOE = ln(good/bad),
+and between −0.12 and −0.85. Variance inflation factors 1.0–1.7. The five drivers above
+IV 0.5 are flagged for leakage review: the delinquency features were verified as known
+at the snapshot date (`tests/test_pd_sample.py`), credit score is from origination, and
+the rate is discussed above.
+
+### Discrimination
+
+| Sample | Gini |
+|---|---|
+| Development | 0.8041 |
+| Out-of-sample | 0.8039 |
+| **Out-of-time** | **0.8052** |
+
+No overfitting (development equals out-of-sample) and no decay out of time. By snapshot
+year the Gini sits between 0.72 and 0.91, with two stories:
+
+- **1999–2000 are weakest (0.72–0.73):** loans with no 12-month history yet, so the
+  behavioural drivers have little to say.
+- **2019 drops to 0.58 — COVID.** Loans observed in December 2019 defaulted in 2020 for
+  reasons none of their characteristics predicted. The model recovers immediately
+  (2020: 0.91). This is exactly the failure mode that justifies IFRS 9 forward-looking
+  scenarios and post-model adjustments: a behavioural model cannot see an exogenous shock
+  coming.
+
+### Grades and raw calibration
+
+Default rates rise monotonically through all 11 master-scale grades, from 0.01% to 40%
+(development) and 0.02% to 40% (out-of-time). Effective grades by Herfindahl: 5.7
+(development), 5.2 (out-of-time) — the book concentrates in grades 3–6, typical of prime
+mortgages.
+
+The raw model PD matches the development default rate exactly (1.41% vs 1.41%, a
+property of maximum likelihood). Out-of-time the model predicts 0.89% against 0.81%
+observed, and in the middle grades observed rates run at roughly 60–75% of model PD.
+That gap is the economic cycle: the model is calibrated to a period that includes 2008,
+and 2017–2024 was mostly benign. **Separating that cycle effect out is the job of the
+next step — TTC calibration and the Vasicek bridge.**
+
+---
+
 ## 2026-09-28 (2) — full sample, all 27 vintages
 
 **Data:** SFLLD Release 47 sample files, vintages 1999–2025. 1,350,000 loans,

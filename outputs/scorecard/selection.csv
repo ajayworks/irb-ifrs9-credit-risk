@@ -1,0 +1,25 @@
+feature,iv,bins,status,flag,coefficient,vif
+max_delinq_12m,2.0280459161470885,3,selected,high IV - leakage review,-0.5836237303009154,1.7033061417152409
+months_delinq_12m,1.9635490789356986,5,dropped: |corr| 0.98 with max_delinq_12m,high IV - leakage review,,
+delinq_bucket,1.7089553327098517,2,selected,high IV - leakage review,-0.3964018631201329,1.6470680663118764
+credit_score,0.8122797916019036,8,selected,high IV - leakage review,-0.3483390486118035,1.1806606414879754
+orig_interest_rate,0.6503174411902727,8,selected,high IV - leakage review,-0.37633026589333096,1.5173066586036417
+prior_default,0.3549082432831716,2,dropped in regression: p = 0.045,,,
+orig_term_months,0.26464989699593455,3,selected,,-0.29456664494225904,1.5843004639996452
+orig_cltv,0.23616033963632949,8,selected,,-0.6018323567096248,1.147689088787812
+orig_ltv,0.2331989749808538,8,dropped: |corr| 0.94 with orig_cltv,,,
+dti,0.22270299372684718,9,selected,,-0.43103497769650756,1.0875220501281666
+channel,0.20434090970878518,4,selected,,-0.1240436562774082,1.319560341931586
+months_on_book,0.16183806063148415,8,selected,,-0.3307235898824039,1.3130400589314832
+mi_pct,0.11493986967085619,3,dropped in regression: wrong sign,,,
+modified,0.1043321326974184,2,dropped in regression: wrong sign,,,
+multiple_borrowers,0.10377343101123815,2,selected,,-0.5978234721380332,1.0227742305165144
+property_state,0.06861933400700489,38,selected,,-0.8498185120327283,1.0053468157598628
+loan_purpose,0.06468956235404179,3,selected,,-0.3469364810930304,1.0779627665862905
+balance_ratio,0.06297656083682988,6,selected,,-0.5513151322837557,1.7317967921490443
+harp_indicator,0.017705777067471347,2,dropped: IV below minimum,,,
+property_type,0.010385225675316738,4,dropped: IV below minimum,,,
+occupancy_status,0.003941319189275651,3,dropped: IV below minimum,,,
+first_time_buyer,0.002902145684512432,2,dropped: IV below minimum,,,
+num_units,0.00041348091264489323,2,dropped: IV below minimum,,,
+forbearance_12m,0.0,1,dropped: IV below minimum,,,

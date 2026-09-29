@@ -338,6 +338,30 @@ def _file_year(path: Path) -> int | None:
     return int(m.group(1)) if m else None
 
 
+def vintages(raw_dir: str | Path | None = None) -> list[int]:
+    """Origination vintages present in the raw directory."""
+    return sorted({_file_year(f) for f in discover(raw_dir)["origination"]} - {None})
+
+
+def data_end_period(raw_dir: str | Path | None = None) -> str:
+    """Last reporting month in the data, as 'YYYY-MM'.
+
+    Read from the most recent vintage's performance files: the newest loans are always
+    still active at the data end, so their last period is the dataset's last period.
+    Batch builds pass this to every vintage so they share one observation cut-off.
+    """
+    perf = discover(raw_dir)["performance"]
+    latest = max(y for y in map(_file_year, perf) if y is not None)
+    files = [f for f in perf if _file_year(f) == latest]
+    raw = duckdb.connect().execute(
+        f"SELECT MAX(column01) FILTER (WHERE regexp_full_match(column01, '[0-9]{{6}}')) "
+        f"FROM read_csv({_sql_list(files)}, delim='|', header=false, all_varchar=true, "
+        f"quote='', escape='')").fetchone()[0]
+    if raw is None:
+        raise ValueError(f"No YYYYMM periods found in {[f.name for f in files]}")
+    return f"{raw[:4]}-{raw[4:6]}"
+
+
 def load_freddie(con: duckdb.DuckDBPyConnection, raw_dir: str | Path | None = None,
                  min_nonzero_for_sign_check: int = 20,
                  years: list[int] | None = None) -> dict:
