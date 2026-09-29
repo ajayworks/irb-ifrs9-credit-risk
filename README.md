@@ -58,8 +58,8 @@ warranty.
 ### How this was built
 
 Developed with AI assistance (Anthropic's Claude) for code, documentation and review. I
-directed the work, ran and verified every result on my own machine, and can explain every
-modelling decision; the findings log records each judgement and each defect found.
+directed the work and ran and verified every result on my own machine; the findings log
+records each judgment and each defect found.
 
 ---
 
